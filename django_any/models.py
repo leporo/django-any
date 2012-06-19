@@ -15,10 +15,22 @@ from django.db import models, IntegrityError
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from django.contrib.webdesign.lorem_ipsum import paragraphs
+from django.conf import settings
 
 from django_any import xunit
 from django_any.functions import valid_choices, split_model_kwargs, \
     ExtensionMethod
+
+try:
+    from django.utils import timezone
+except ImportError:
+    timezone = False
+
+if timezone:
+   try:
+      from pytz import NonExistentTimeError
+   except:
+      class NonExistentTimeError(Exception): pass
 
 any_field = ExtensionMethod()
 any_model = ExtensionMethod(by_instance=True)
@@ -142,7 +154,15 @@ def any_date_field(field, **kwargs):
         return None
     from_date = kwargs.get('from_date', date(1990, 1, 1))
     to_date = kwargs.get('to_date', date.today())
-    return xunit.any_date(from_date=from_date, to_date=to_date)
+    while True:
+        t = xunit.any_date(from_date=from_date, to_date=to_date)
+        if getattr(settings, 'USE_TZ') and timezone:
+            try:
+                t = timezone.make_aware(t, timezone.get_current_timezone())
+            except NonExistentTimeError:
+                continue
+        break
+    return t
 
 
 @any_field.register(models.DateTimeField)
@@ -157,7 +177,15 @@ def any_datetime_field(field, **kwargs):
     """
     from_date = kwargs.get('from_date', datetime(1990, 1, 1))
     to_date = kwargs.get('to_date', datetime.today())
-    return xunit.any_datetime(from_date=from_date, to_date=to_date)
+    while True:
+        t = xunit.any_datetime(from_date=from_date, to_date=to_date)
+        if getattr(settings, 'USE_TZ') and timezone:
+            try:
+                t = timezone.make_aware(t, timezone.get_current_timezone())
+            except NonExistentTimeError:
+                continue
+        break
+    return t
 
 
 @any_field.register(models.DecimalField)
