@@ -28,9 +28,10 @@ except ImportError:
 
 if timezone:
    try:
-      from pytz import NonExistentTimeError
+      from pytz import NonExistentTimeError, AmbiguousTimeError
    except:
       class NonExistentTimeError(Exception): pass
+      class AmbiguousTimeError(Exception): pass
 
 any_field = ExtensionMethod()
 any_model = ExtensionMethod(by_instance=True)
@@ -159,7 +160,7 @@ def any_date_field(field, **kwargs):
         if getattr(settings, 'USE_TZ') and timezone:
             try:
                 t = timezone.make_aware(t, timezone.get_current_timezone())
-            except NonExistentTimeError:
+            except (NonExistentTimeError, AmbiguousTimeError):
                 continue
         break
     return t
@@ -182,7 +183,7 @@ def any_datetime_field(field, **kwargs):
         if getattr(settings, 'USE_TZ') and timezone:
             try:
                 t = timezone.make_aware(t, timezone.get_current_timezone())
-            except NonExistentTimeError:
+            except (NonExistentTimeError, AmbiguousTimeError):
                 continue
         break
     return t
